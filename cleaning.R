@@ -2,6 +2,9 @@
 library(tidyverse)
 library(GGally)
 library(PerformanceAnalytics)
+library(ggpubr)
+library(modelr)
+library(broom)
 
 # Read team advanced statistics data
 team_adv_stat <- read_csv("data/raw/2018-19_nba_team_statistics_1.csv") 
@@ -27,6 +30,8 @@ str(player_stat)
 
 str(player_sal_stat)
 
+str(team_pay_stat)
+
 # Combine team data
 team_stat <- as_tibble(cbind(team_adv_stat, team_bas_stat[, -c(1:2)]))
 
@@ -41,6 +46,8 @@ str(team_stat)
 which(is.na(team_stat), arr.ind = TRUE)
 
 which(is.na(player_stat), arr.ind = TRUE)
+
+which(is.na(player_sal_stat), arr.ind = TRUE)
 
 # Transform joined team data 
 team_tbl <- team_stat %>% 
@@ -66,7 +73,7 @@ team_tbl <- team_stat %>%
 head(team_tbl)
 
 # Transform player salary data 
-play_sal_tbl <- player_sal_stat %>%  
+player_sal_tbl <- player_sal_stat %>%  
   select_if(!colSums(is.na(.)) == nrow(player_sal_stat)) %>% 
   mutate(player_name = stringi::stri_trans_general(player_name, "Latin-ASCII")) %>% 
   mutate(first_name = player_name,
@@ -90,7 +97,10 @@ player_tbl <- player_stat %>%
          player_name = stringi::stri_trans_general(player_name, "Latin-ASCII"),
          Pos = str_replace(Pos, "-.*", ""))
 
-
+# Transform team payroll data
+team_pay_tbl <- team_pay_stat %>% 
+  mutate(team_id = as_factor(team_id), 
+         salary = parse_number(salary)) 
 
 
 

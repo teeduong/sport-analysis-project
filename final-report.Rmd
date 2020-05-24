@@ -1,0 +1,98 @@
+---
+title: "Sport Data Analysis Project"
+subtitle: "Chicago Bulls - NBA Players for 2019-20 season"
+author: "Tee Duong"
+output: 
+  bookdown::html_document2: 
+    fig_caption: yes
+    fig_height: 3.5
+    fig_width: 4.5
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+source("final-graphs.R")
+library(knitr)
+library(bookdown)
+opts_chunk$set(echo = FALSE)
+```
+
+# Background & Introduction
+Data analytics has been revolutionising the NBA especially for teams with limited budget like Chicago Bulls. Specfically, Dean Oliver has identified and proved how the "Four Factors of Basketball Success" can help provide accurate team win projections. There four factors are^2^:
+
+* Effective Field Goal%: accounting for shooting efficiency
+* Turnover Rate: estimatation of offensive and deffensive turnovers
+* Rebounds Rate: how the team can efficiently grab rebounds
+* Free Throw Rate: the number of free throws per free throw attempt which has been taken opposition personal's fouls into consideration.
+
+As part of the preparation for 2019-20 season, the aim of this project is to recommend Chicago Bulls manager a list of five NBA players for each position with a budget of $118 million based on the Four Factors as a measure of success. This report will use appropriate data analytics and modelling to predict Win Ratio as a measure of success and value players by answer the following questions:
+
+1. How do team 3 point values relate to success?
+2. How do team 2 point values relate to success?
+3. How do team free throw values relate to success?
+4. Does team turnover values negatively affect team success?
+5. How do team offensive rebounds and deffensive reounds relate to success?
+
+# Analysis and Modelling 
+## Explanatory Data Analysis
+Firstly, we will conduct exploratary data analysis examine the relationships between `Win_per_game` or Win Ratio (W/G) and its potential predictors. *Figure 2.1* show that there is a positive relationships between Win Ratio and `X3P_per_game`, `X2P_per_game`, `FT_per_game`, `TOV_per_game`, `ORB_per_game`, `DRB_per_game`. 
+
+```{r echo=FALSE, fig.align='center', fig.cap="The relationship between predictors and target variables", fig.width=9, warning=FALSE}
+plt_exp_vars
+```
+
+*Figure 2.2* indicates that deffensive rebounds per game, 3 points per game, free throws per game and 2 points per game values have moderate positive relationships with Win Ratio. In other words, as one of these variables increases, the team win per game tends to also increase moderately. The correlation coefficients for turnovers and offensive rebounds per game suggest weak positive relationships with Win Ratio. Normally, we would expect the negative relationships between turnovers and Win Ratio, however, the data suggests the opposite. A small sample size might be the cause to this issue. We will accept the data as it is and continue with modelling.  
+```{r echo=FALSE, fig.cap="Correlation coefficients between Win Ratio and other predictors", fig.height=2.5, fig.width=7, fig.align='center',warning=FALSE}
+ggtexttable(corr, rows = NULL, 
+            theme = ttheme("mOrange"))
+```
+
+## Multivariate Linear Regression Modelling
+We will use a multilinear regression approach for modelling by fitting a linear equation to predict team Win Ratio. After checking the assumptions, it is noted that there are evidence of negative confounding due to small sample size, therefore, we decided to omit the deffensive rebounds per game. We are 92% the variations of square root `Win_per_game` around the mean are explained by `X3P_per_game`, `X2P_per_game`, `FT_per_game`, `TOV_per_game`, `ORB_per_game`, `DRB_per_game` and the best linear equation is as follows:
+
+$Sqrt(WinRatio) = 0.763*(X3Ppergame) + 0.525*(X2Ppergame) +$
+$0.240*(FTpergame) + 0.0416*(ORBpergame) + 0.0685*(TOVpergame)$
+
+```{r echo=FALSE, fig.height=2.5, fig.width=9, warning=FALSE}
+ggtexttable(tbl_fit_2, rows = NULL, theme = ttheme("mOrange"))
+```
+
+Our aim is to identify an accurate estimation of team Win Ratio in our data. The regression analysis result is presented in *Figure 2.3* which indicates that the predicted values are in line with the actual values with small variations. Team ranked at number 1 and 2 are overlued and Chicago Bulls' ranking in this model is undervalued. 
+
+```{r echo=FALSE, fig.cap="Actual Win Ratio vs. Predicted Win Ratio by Ranking", fig.height=2.5, fig.width=9, fig.align='center', warning=FALSE}
+team_tbl_final %>% 
+  mutate(W_hat = predict(fit_2, newdata = .)**2) %>%
+  ggplot(aes(W_hat, W_per_game, label = Rk)) + 
+  geom_point(aes(colour = Rk)) +
+  geom_text(nudge_x=1, nudge_y = -1.1, cex = 3) + 
+  geom_abline(linetype = "dashed") +
+  labs(x = "Predicted Win Per Game", y = "Actual Win Per Game")+
+  theme(legend.position = "none")
+```
+
+We will then create a player-specific metric by computing the average of minutes player per game (`MP_per_game`). The higher the `pred_W` metric means that there are higher chances we expect the team will win if all players are exactly like that player. The following table is the top 10 players generated from this model:
+```{r echo=FALSE, fig.cap="Top 10 players estimated from the model", fig.height=3, fig.width=9, fig.align='center', message=FALSE, warning=FALSE}
+tmp <- players %>% 
+  arrange(desc(pred_W), salary) %>%  
+  top_n(10)
+
+ggtexttable(tmp[1:10,], rows = NULL, theme = ttheme("mOrange"))
+```
+
+## Recommendation
+It is worth noting that Chicago Bulls' budget for the next season is $118 millon which is in bottom 4 teams. Our strategy for selection is to choose the players with highest or near highest predicted values in each position but will only select those with a maximum salary of \$20 million. As a result, we recommend the following players: 
+
+```{r fig.height=6, fig.width=9, warning=FALSE}
+ggarrange(plt_players, tbl_players, nrow = 2, heights = c(2.5,1.5))
+```
+
+# Conclusion 
+In conclusion, we have conducted exploratory data analysis and multivariate linear regression modelling to provide recommendations on selecting best 5 players for each position for Chicago Bulls within the budget given. While the analysis provided insights into the relationships between the team win ratio and other predictors, the model fitted the linear equation to predict the player-specific metric which helps selecting players. One key limitation within this report is that the sample size is small for normal distributions which might affect the estimation accuracy. One possible solution to this is to collect more historic data over the past 5 years.  
+
+# References
+^1^Basketball-Reference.com. (n.d.), *Basketball Statistics and History*. [https://goo.gl/DF6xbo](https://goo.gl/DF6xbo)
+
+^2^Strauss, Factor, Laing & Lyons. (2005), *What Wins Basketball Games, a Review of “Basketball on Paper: Rules and Tools for Performance Analysis” By Dean Oliver*. [https://goo.gl/w8HxcP](https://goo.gl/w8HxcP)
+
+^3^Wikipedia (2020), Basketball Positions.[https://en.wikipedia.org/wiki/Basketball_positions](https://en.wikipedia.org/wiki/Basketball_positions)

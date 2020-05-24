@@ -1,7 +1,6 @@
+# Source codes
 source("cleaning.R")
 source("analysis.R")
-
-library(modelr)
 
 # Fitting linear regression for the explanatory variables
 fit <- lm(W_per_game ~ X3P_per_game + X2P_per_game + FT_per_game + ORB_per_game + DRB_per_game + TOV_per_game, data = team_tbl_final)
@@ -97,7 +96,7 @@ summary(fit_2)
 # collecting more sample is beyond the scope of this analysis. 
 
 # Interpretation of fit_2
-broom::tidy(fit_2, conf.int = TRUE)
+tbl_fit_2 <- tidy(fit_2, conf.int = TRUE)
 
 # intercept coefficient = when all continuous explanatory variables are equal to 0,
 # the estimated sqrt(W_per_game) is -22.9%
@@ -110,10 +109,12 @@ broom::tidy(fit_2, conf.int = TRUE)
 # Model Testing
 team_tbl_final %>% 
   mutate(W_hat = predict(fit_2, newdata = .)**2) %>%
-  ggplot(aes(W_hat, W_per_game, label = paste("Rk",Rk))) + 
-  geom_point() +
-  geom_text(nudge_x=1, nudge_y = 1.1, cex = 3) + 
-  geom_abline()
+  ggplot(aes(W_hat, W_per_game, label = Rk)) + 
+  geom_point(aes(colour = Rk)) +
+  geom_text(nudge_x=1, nudge_y = -1.1, cex = 3) + 
+  geom_abline() +
+  labs(x = "Predicted Win Per Game", y = "Actual Win Per Game")+
+  theme(legend.position = "none")
 
 # Create a player metric that comparable with team metric 
 # Calculate the average of minutes played per game 
@@ -147,7 +148,7 @@ players <- right_join(players, players_pred[, c("player_name", "pred_W")], by = 
   filter(!is.na(Pos))
 
 # Add salary to players data
-players <- right_join(players, player_sal_stat[,c("player_name", "salary")], by="player_name") %>% 
+players <- right_join(players, player_sal_tbl[,c("player_name", "salary")], by="player_name") %>% 
   filter(!is.na(Pos)  & !is.na(salary))
 
 # Sort players data by pred

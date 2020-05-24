@@ -1,12 +1,11 @@
+# Source codes from cleaning
 source("cleaning.R")
 
-library(ggpubr)
-
 ## Based on Four Factor model
-## Create a metric Win Ratio (W/G) to value players 
+## Use Win Ratio (W/G) as a measure of success to value players 
 ## based on successful actions and their relative contribution to Wins 
 
-## How does team 3P values relate to success?
+## How does team 2P values relate to success?
 ## How does team 3P values relate to success?
 ## How does team FT values relate to success?
 ## We can use Win Ratio (W/G) as a measure of success to compare teams
@@ -66,7 +65,7 @@ plt_DRB <- team_tbl_final %>%
   geom_smooth(method = "lm", se = FALSE, colour = "red") +
   ylim(c(20,80))
 
-ggarrange(plt_3P, plt_2P, plt_FT, plt_TOV, plt_ORB, plt_DRB,
+plt_exp_vars <- ggarrange(plt_3P, plt_2P, plt_FT, plt_TOV, plt_ORB, plt_DRB,
           ncol = 3, nrow = 2)
 
 # Take a closer look to the those variables with correlation > 0.3,
